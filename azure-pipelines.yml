@@ -65,7 +65,7 @@ jobs:
               script: |
                #  Modify deployment script based on the app type
                 echo "Starting deployment script run"
-                sudo java -jar '$(Pipeline.Workspace)/npm/**/target/*.jar'
+                sudo npm start '$(Pipeline.Workspace)/npm/**/target/*.jar'
         routeTraffic:
           steps:
           - script: echo routing traffic
