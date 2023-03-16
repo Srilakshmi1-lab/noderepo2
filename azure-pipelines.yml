@@ -9,8 +9,7 @@ trigger:
 pool: Chillababy_SHA
   
 jobs:
-- job: Build
- 
+- job: Build 
 
   steps:
   - task: NodeTool@0
@@ -46,6 +45,7 @@ jobs:
 - job: 
 - deployment: VMDeploy
   displayName: LinuxVM
+  dependsOn: Build
   environment:
     name: chillbabyvm_env
     resourceType: VirtualMachine
