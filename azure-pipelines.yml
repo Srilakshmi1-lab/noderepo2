@@ -7,77 +7,75 @@ trigger:
 - main
 
 pool: Chillababy_SHA
-stages:
-  - stage: Build
-    jobs:
-    - job: Build 
+  
+jobs:
+- job: Build 
 
-      steps:
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '16.18.1'
-        displayName: 'Install Node.js'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '16.18.1'
+    displayName: 'Install Node.js'
 
-      - script: |
-          npm install
-          npm run build
-        displayName: 'npm install and build'
+  - script: |
+      npm install
+      npm run build
+    displayName: 'npm install and build'
 
-      - task: CopyFiles@2
-        inputs:
-          sourceFolder: '$(Build.SourcesDirectory)'
-          contents: '*.tgz' 
-          targetFolder: $(Build.ArtifactStagingDirectory)/npm
-        displayName: 'Copy npm package'
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)'
+      contents: '*.tgz' 
+      targetFolder: $(Build.ArtifactStagingDirectory)/npm
+    displayName: 'Copy npm package'
 
-      - task: CopyFiles@2
-        inputs:
-          sourceFolder: '$(Build.SourcesDirectory)'
-          contents: 'package.json' 
-          targetFolder: $(Build.ArtifactStagingDirectory)/npm
-        displayName: 'Copy package.json'   
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)'
+      contents: 'package.json' 
+      targetFolder: $(Build.ArtifactStagingDirectory)/npm
+    displayName: 'Copy package.json'   
 
-      - task: PublishPipelineArtifact@1
-        inputs:
-          targetPath: '$(Build.ArtifactStagingDirectory)/npm'
-          artifactName: npm
-        displayName: 'Publish npm artifact'
-  - stage: Deploy
-    jobs:
-      - job: Deploy   
-      - deployment: VMDeploy
-        displayName: LinuxVM
-        dependsOn: Build
-        environment:
-          name: chillbabyvm_env
-          resourceType: VirtualMachine
-        strategy:
-            rolling:
-            #  maxParallel: 5  #for percentages, mention as x%
-              preDeploy:
-                steps:
-                - download: current
-                  artifact: npm
-                - script: echo initialize, cleanup, backup, install certs
-              deploy:
-                steps:
-                - task: Bash@3
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                    #  Modify deployment script based on the app type
-                      echo "Starting deployment script run"
-                      sudo npm start '$(Pipeline.Workspace)/npm/**/target/*.jar'
-              routeTraffic:
-                steps:
-                - script: echo routing traffic
-              postRouteTraffic:
-                steps:
-                - script: echo health check post-route traffic
-              on:
-                failure:
-                  steps:
-                  - script: echo Restore from backup! This is on failure
-                success:
-                  steps:
-                  - script: echo Notify! This is on success
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)/npm'
+      artifactName: npm
+    displayName: 'Publish npm artifact'
+    
+- job: 
+- deployment: VMDeploy
+  displayName: LinuxVM
+  dependsOn: Build
+  environment:
+    name: chillbabyvm_env
+    resourceType: VirtualMachine
+  strategy:
+      rolling:
+      #  maxParallel: 5  #for percentages, mention as x%
+        preDeploy:
+          steps:
+          - download: current
+            artifact: npm
+          - script: echo initialize, cleanup, backup, install certs
+        deploy:
+          steps:
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+               #  Modify deployment script based on the app type
+                echo "Starting deployment script run"
+                sudo npm start '$(Pipeline.Workspace)/npm/**/target/*.jar'
+        routeTraffic:
+          steps:
+          - script: echo routing traffic
+        postRouteTraffic:
+          steps:
+          - script: echo health check post-route traffic
+        on:
+          failure:
+            steps:
+            - script: echo Restore from backup! This is on failure
+          success:
+            steps:
+            - script: echo Notify! This is on success
